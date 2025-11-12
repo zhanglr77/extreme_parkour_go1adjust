@@ -40,7 +40,10 @@ import torch
 import wandb
 
 def train(args):
-    args.headless = True
+    # 允许通过命令行参数控制有头/无头模式
+    # 如果没有指定 --headless，则默认使用无头模式（为了兼容性）
+    if not hasattr(args, 'headless') or args.headless is None:
+        args.headless = True
     log_pth = LEGGED_GYM_ROOT_DIR + "/logs/{}/".format(args.proj_name) + args.exptid
     try:
         os.makedirs(log_pth)
@@ -56,7 +59,7 @@ def train(args):
     
     if args.no_wandb:
         mode = "disabled"
-    wandb.init(project=args.proj_name, name=args.exptid, entity="parkour", group=args.exptid[:3], mode=mode, dir="../../logs")
+    wandb.init(project=args.proj_name, name=args.exptid, entity="zhanglerong7-gt", group=args.exptid[:3], mode=mode, dir="../../logs")
     wandb.save(LEGGED_GYM_ENVS_DIR + "/base/legged_robot_config.py", policy="now")
     wandb.save(LEGGED_GYM_ENVS_DIR + "/base/legged_robot.py", policy="now")
 

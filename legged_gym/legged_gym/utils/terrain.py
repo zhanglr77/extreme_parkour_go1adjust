@@ -321,6 +321,30 @@ class Terrain:
             idx = 20
             demo_terrain(terrain)
             self.add_roughness(terrain)
+        elif choice < self.proportions[20]:
+            idx = 21
+            # 固定5cm间隙地形（每个间隙5cm，平台间距固定25cm）
+            # 课程学习：从上到下（row 0-9）难度递增，间隙从2cm->5cm
+            fixed_gap_5cm_terrain(terrain,
+                                 platform_spacing=0.25,  # 平台间距固定25cm
+                                 difficulty=difficulty,  # 课程学习：2cm->5cm
+                                 y_range=self.cfg.y_range,
+                                 half_valid_width=[0.6, 1.0],
+                                 gap_depth=[0.2, 1],
+                                 pad_height=0)
+            self.add_roughness(terrain)
+        elif choice < self.proportions[21]:
+            idx = 22
+            # 固定15cm间隙地形（每个间隙15cm，平台间距固定25cm）
+            # 课程学习：从上到下（row 0-9）难度递增，间隙从5cm->15cm
+            fixed_gap_15cm_terrain(terrain,
+                                  platform_spacing=0.25,  # 平台间距固定25cm
+                                  difficulty=difficulty,  # 课程学习：5cm->15cm
+                                  y_range=self.cfg.y_range,
+                                  half_valid_width=[0.6, 1.0],
+                                  gap_depth=[0.2, 1],
+                                  pad_height=0)
+            self.add_roughness(terrain)
         # np.set_printoptions(precision=2)
         # print(np.array(self.proportions), choice)
         terrain.idx = idx
@@ -941,3 +965,170 @@ def convert_heightfield_to_trimesh(height_field_raw, horizontal_scale, vertical_
         triangles[start+1:stop:2, 2] = ind3
 
     return vertices, triangles, move_x != 0
+
+# ============================================================================
+# 固定间隙地形函数（5cm 和 15cm）
+# ============================================================================
+
+def fixed_gap_5cm_terrain(terrain,
+                         platform_len=2.5,
+                         platform_height=0.,
+                         platform_spacing=0.25,  # 平台间距固定25cm
+                         difficulty=1.0,  # 课程学习难度 0-1
+                         y_range=[-0.4, 0.4],
+                         half_valid_width=[0.6, 1.0],
+                         gap_depth=[0.2, 1],
+                         pad_width=0.1,
+                         pad_height=0.5):
+    """
+    固定5cm间隙的地形（支持课程学习）
+    每个间隙大小为5cm（课程学习2cm->5cm），平台间距固定25cm
+    
+    Parameters:
+        platform_spacing: 平台间距（两个间隙之间的地面长度）[m]，固定0.25m (25cm)
+        difficulty: 课程学习难度 [0-1]
+                   - difficulty=0: 2cm间隙（简单）- row 0（最上面一行）
+                   - difficulty=1: 5cm间隙（目标难度）- row 9（最下面一行）
+    """
+    # 固定8个goals以匹配其他地形
+    goals = np.zeros((8, 2))
+    mid_y = terrain.length // 2
+    
+    platform_len = round(platform_len / terrain.horizontal_scale)
+    platform_height = round(platform_height / terrain.vertical_scale)
+    gap_depth = -round(np.random.uniform(gap_depth[0], gap_depth[1]) / terrain.vertical_scale)
+    
+    # 通道宽度（不变化，直线）
+    half_valid_width = round(np.random.uniform(half_valid_width[0], half_valid_width[1]) / terrain.horizontal_scale)
+    
+    terrain.height_field_raw[0:platform_len, :] = platform_height
+    
+    # 课程学习：间隙从2cm逐渐增加到5cm
+    gap_size_m = 0.02 + 0.03 * difficulty  # 2cm -> 5cm
+    gap_size = round(gap_size_m / terrain.horizontal_scale)
+    
+    # 平台间距固定25cm
+    platform_spacing_scaled = round(platform_spacing / terrain.horizontal_scale)
+    
+    # 根据地形总长度自动计算间隙数量
+    # terrain.width 是地形总长度（像素），减去起始平台，除以（平台+间隙）的长度
+    available_length = terrain.width - platform_len
+    gap_and_platform = gap_size + platform_spacing_scaled
+    num_gaps = int(available_length / gap_and_platform)
+    
+    dis_x = platform_len
+    goals[0] = [platform_len - 1, mid_y]
+    
+    goal_idx = 1
+    for i in range(num_gaps):
+        # 先放置平台部分（25cm）
+        dis_x += platform_spacing_scaled
+        
+        # 创建间隙（5cm，课程学习）
+        terrain.height_field_raw[dis_x : dis_x+gap_size, :] = gap_depth
+        
+        # 设置通道边界（无横向偏移，直线）
+        terrain.height_field_raw[dis_x:dis_x+gap_size, :mid_y-half_valid_width] = gap_depth
+        terrain.height_field_raw[dis_x:dis_x+gap_size, mid_y+half_valid_width:] = gap_depth
+        
+        # 均匀分布goals
+        if goal_idx < 7 and i % max(1, num_gaps // 6) == 0:
+            goals[goal_idx] = [dis_x - platform_spacing_scaled//2, mid_y]
+            goal_idx += 1
+        
+        # 移动到间隙后
+        dis_x += gap_size
+    
+    # 最后一个goal
+    goals[-1] = [min(dis_x + platform_spacing_scaled//2, terrain.width - 10), mid_y]
+    
+    terrain.goals = goals * terrain.horizontal_scale
+    
+    # 边界填充
+    pad_width = int(pad_width // terrain.horizontal_scale)
+    pad_height = int(pad_height // terrain.vertical_scale)
+    terrain.height_field_raw[:, :pad_width] = pad_height
+    terrain.height_field_raw[:, -pad_width:] = pad_height
+    terrain.height_field_raw[:pad_width, :] = pad_height
+    terrain.height_field_raw[-pad_width:, :] = pad_height
+
+def fixed_gap_15cm_terrain(terrain,
+                          platform_len=2.5,
+                          platform_height=0.,
+                          platform_spacing=0.25,  # 平台间距固定25cm
+                          difficulty=1.0,  # 课程学习难度 0-1
+                          y_range=[-0.4, 0.4],
+                          half_valid_width=[0.6, 1.0],
+                          gap_depth=[0.2, 1],
+                          pad_width=0.1,
+                          pad_height=0.5):
+    """
+    固定15cm间隙的地形（支持课程学习）
+    每个间隙大小为15cm（课程学习5cm->15cm），平台间距固定25cm
+    
+    Parameters:
+        platform_spacing: 平台间距（两个间隙之间的地面长度）[m]，固定0.25m (25cm)
+        difficulty: 课程学习难度 [0-1]
+                   - difficulty=0: 5cm间隙（简单）- row 0（最上面一行）
+                   - difficulty=1: 15cm间隙（目标难度）- row 9（最下面一行）
+    """
+    # 固定8个goals以匹配其他地形
+    goals = np.zeros((8, 2))
+    mid_y = terrain.length // 2
+    
+    platform_len = round(platform_len / terrain.horizontal_scale)
+    platform_height = round(platform_height / terrain.vertical_scale)
+    gap_depth = -round(np.random.uniform(gap_depth[0], gap_depth[1]) / terrain.vertical_scale)
+    
+    # 通道宽度（不变化，直线）
+    half_valid_width = round(np.random.uniform(half_valid_width[0], half_valid_width[1]) / terrain.horizontal_scale)
+    
+    terrain.height_field_raw[0:platform_len, :] = platform_height
+    
+    # 课程学习：间隙从5cm逐渐增加到15cm
+    gap_size_m = 0.05 + 0.10 * difficulty  # 5cm -> 15cm
+    gap_size = round(gap_size_m / terrain.horizontal_scale)
+    
+    # 平台间距固定25cm
+    platform_spacing_scaled = round(platform_spacing / terrain.horizontal_scale)
+    
+    # 根据地形总长度自动计算间隙数量
+    available_length = terrain.width - platform_len
+    gap_and_platform = gap_size + platform_spacing_scaled
+    num_gaps = int(available_length / gap_and_platform)
+    
+    dis_x = platform_len
+    goals[0] = [platform_len - 1, mid_y]
+    
+    goal_idx = 1
+    for i in range(num_gaps):
+        # 先放置平台部分（25cm）
+        dis_x += platform_spacing_scaled
+        
+        # 创建间隙（15cm，课程学习）
+        terrain.height_field_raw[dis_x : dis_x+gap_size, :] = gap_depth
+        
+        # 设置通道边界（无横向偏移，直线）
+        terrain.height_field_raw[dis_x:dis_x+gap_size, :mid_y-half_valid_width] = gap_depth
+        terrain.height_field_raw[dis_x:dis_x+gap_size, mid_y+half_valid_width:] = gap_depth
+        
+        # 均匀分布goals
+        if goal_idx < 7 and i % max(1, num_gaps // 6) == 0:
+            goals[goal_idx] = [dis_x - platform_spacing_scaled//2, mid_y]
+            goal_idx += 1
+        
+        # 移动到间隙后
+        dis_x += gap_size
+    
+    # 最后一个goal
+    goals[-1] = [min(dis_x + platform_spacing_scaled//2, terrain.width - 10), mid_y]
+    
+    terrain.goals = goals * terrain.horizontal_scale
+    
+    # 边界填充
+    pad_width = int(pad_width // terrain.horizontal_scale)
+    pad_height = int(pad_height // terrain.vertical_scale)
+    terrain.height_field_raw[:, :pad_width] = pad_height
+    terrain.height_field_raw[:, -pad_width:] = pad_height
+    terrain.height_field_raw[:pad_width, :] = pad_height
+    terrain.height_field_raw[-pad_width:, :] = pad_height

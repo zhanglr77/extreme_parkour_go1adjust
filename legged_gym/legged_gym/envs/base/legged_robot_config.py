@@ -38,7 +38,7 @@ class LeggedRobotCfg(BaseConfig):
         load_student_config = False
         mask_priv_obs = False
     class env:
-        num_envs = 6144
+        num_envs = 4096  # 增加到4096环境，进一步加速训练
 
         n_scan = 132
         n_priv = 3+3 +3
@@ -146,7 +146,7 @@ class LeggedRobotCfg(BaseConfig):
         border_size = 5 # [m]
         height = [0.02, 0.06]
         simplify_grid = False
-        gap_size = [0.02, 0.1]
+        gap_size = [0.03, 0.18]  # 调整为3-18cm，适合5-15cm目标
         stepping_stone_distance = [0.02, 0.08]
         downsampled_scale = 0.075
         curriculum = True
