@@ -1,0 +1,70 @@
+ python legged_gym/scripts/play.py --task=go1 --num_envs=4 --proj_name=parkour_new --exptid=123456 --checkpoint=8000
+
+export LD_LIBRARY_PATH=/home/zhanglr/anaconda3/envs/parkour/lib:$LD_LIBRARY_PATH
+
+python legged_gym/scripts/train.py \
+    --task=go1 \
+    --num_envs=4096 \
+    --headless \
+    --proj_name=parkour_new \
+    --exptid=go1_3terrain_4096envs_$(date +%Y%m%d)python legged_gym/scripts/train.py \
+    --task=go1 \
+    --num_envs=4096 \
+    --headless \
+    --proj_name=parkour_new \
+    --exptid=go1_3terrain_4096envs_$(date +%Y%m%d)
+
+    rew_feet_stumble (权重 -1.0)
+
+中文：足部绊倒惩罚
+含义：惩罚足部在摆动期意外接触地面
+反映问题：
+✅ 接近0：抬腿高度足够
+❌ 负值大：抬腿不够，拖脚行走
+rew_feet_edge (权重 -1.0)
+
+中文：足部边缘惩罚
+含义：惩罚足部接触平台边缘
+反映问题：
+✅ 接近0：落脚点准确
+❌ 负值大：频繁踩在边缘，容易失足
+这个任务主要关注这两个，要让他们的值尽可能接近0，同时观察其他奖励项确保整体表现良好。或许可以调整这两个奖励项的权重，看看能否进一步改善机器人在吊桥地形上的行走稳定性和安全性。
+rew_feet_slip (权重 -0.5)
+中文：足部打滑惩罚
+含义：惩罚足部在接触地面时的滑动
+反映问题：
+✅ 接近0：足部抓地良好
+❌ 负值大：足部打滑，抓地力不足
+
+ 如何综合分析
+健康训练的特征：
+mean_reward 持续上升，最终稳定在高位
+mean_episode_length 接近最大值（1000）
+跟踪奖励 (tracking_goal_vel, tracking_yaw) 高且稳定
+惩罚项 (collision, stumble, orientation) 接近0
+损失函数 逐渐下降并稳定
+terrain_level 逐步增长至9
+常见问题诊断：
+问题现象	可能原因	解决方案
+collision负值大	抬腿不够高	增加feet_stumble权重，调整base_height_target
+tracking_goal_vel低	速度跟踪差	增加奖励权重，检查关节刚度
+orientation负值大	身体不稳	增加姿态惩罚权重，检查质心配置
+mean_episode_length短	频繁摔倒	降低难度，增加稳定性奖励
+terrain_level停滞	卡在某难度	调整课程学习阈值，简化该难度地形
+
+
+highres任务
+显存预估:
+  Test: 13,333 顶点 × 4环境 = 53,333
+       ~0.1GB
+
+  Full: 66,667 顶点 × 3072环境 = 204,800,000
+       ~75.0GB
+
+export LD_LIBRARY_PATH=/home/zhanglr/anaconda3/envs/parkour/lib:$LD_LIBRARY_PATH
+cd /path/to/legged_gym
+python legged_gym/scripts/train.py \
+    --task=go1_highres \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_3cm_391scan \
+    --headless
