@@ -66,38 +66,56 @@ def play(args):
     # override some parameters for testing
     if args.nodelay:
         env_cfg.domain_rand.action_delay_view = 0
-    env_cfg.env.num_envs = 16 if not args.save else 64
+    # 每个地形块1个机器人：6行(row 0-5) × 3列 = 18个环境
+    env_cfg.env.num_envs = 18  # 确保每个地形块恰好有1个机器人
     env_cfg.env.episode_length_s = 60
     env_cfg.commands.resampling_time = 60
-    env_cfg.terrain.num_rows = 5  # 5行难度级别
+    # 地形难度配置：
+    # difficulty = row_id / (num_rows - 1)
+    # 6行 -> row 0-5 -> difficulty: 0.0, 0.2, 0.4, 0.6, 0.8, 1.0
+    # 但我们希望difficulty只到0.5，所以：
+    # 11行 -> row 0-10 -> 每行difficulty间隔0.1
+    # 只生成前6行(0-5) -> difficulty: 0.0, 0.1, 0.2, 0.3, 0.4, 0.5
+    # parkour_gap: gap_size = 0.1 + 0.7*difficulty -> 10cm到45cm
+    env_cfg.terrain.num_rows = 11  # 11行基数让每行间隔0.1
     env_cfg.terrain.num_cols = 3  # 3列地形（parkour_gap + fixed_gap_5cm + fixed_gap_15cm）
+    env_cfg.terrain.terrain_length = 12.0  # 减少地形长度：18m → 12m（内存优化）
+    env_cfg.terrain.horizontal_scale = 0.05  # 5cm网格：3.5cm缝隙约0.7像素，勉强可见（平衡分辨率和内存）
+    env_cfg.terrain.max_init_terrain_level = 5  # 限制只生成前6行(0-5)，难度最高0.5
     env_cfg.terrain.height = [0.02, 0.02]
-    env_cfg.terrain.terrain_dict = {"smooth slope": 0., 
-                                    "rough slope up": 0.0,
-                                    "rough slope down": 0.0,
-                                    "rough stairs up": 0., 
-                                    "rough stairs down": 0., 
-                                    "discrete": 0., 
-                                    "stepping stones": 0.0,
-                                    "gaps": 0., 
-                                    "smooth flat": 0,
-                                    "pit": 0.0,
-                                    "wall": 0.0,
-                                    "platform": 0.,
-                                    "large stairs up": 0.,
-                                    "large stairs down": 0.,
-                                    "parkour": 0.0,
-                                    "parkour_hurdle": 0.0,
-                                    "parkour_flat": 0.,
-                                    "parkour_step": 0.0,
-                                    "parkour_gap": 0.33, 
-                                    "demo": 0.0,
-                                    "fixed_gap_5cm": 0.33,
-                                    "fixed_gap_15cm": 0.34}
+    # terrain_dict必须保持完整结构（make_terrain依赖索引）
+    # 在curiculum模式下，choice = j/num_cols 映射到cumsum(proportions)
+    # 3列: col0→choice~0.001, col1→choice~0.334, col2→choice~0.668
+    # proportions[19]=0.33, [20]=0.66, [21]=1.0
+    # 所以: col0→parkour_gap, col1→fixed_gap_5cm, col2→fixed_gap_15cm
+    env_cfg.terrain.terrain_dict = {
+        "smooth slope": 0., 
+        "rough slope up": 0.0,
+        "rough slope down": 0.0,
+        "rough stairs up": 0., 
+        "rough stairs down": 0., 
+        "discrete": 0., 
+        "stepping stones": 0.0,
+        "gaps": 0., 
+        "smooth flat": 0,
+        "pit": 0.0,
+        "wall": 0.0,
+        "platform": 0.,
+        "large stairs up": 0.,
+        "large stairs down": 0.,
+        "parkour": 0.0,
+        "parkour_hurdle": 0.0,
+        "parkour_flat": 0.,
+        "parkour_step": 0.0,
+        "parkour_gap": 0.33,        # 索引19 → col 0
+        "demo": 0.0,
+        "fixed_gap_5cm": 0.33,      # 索引20 → col 1
+        "fixed_gap_15cm": 0.34      # 索引21 → col 2
+    }
     
     env_cfg.terrain.terrain_proportions = list(env_cfg.terrain.terrain_dict.values())
-    env_cfg.terrain.curriculum = False
-    env_cfg.terrain.max_difficulty = True
+    env_cfg.terrain.curriculum = False  # 不启用课程学习
+    env_cfg.terrain.max_difficulty = False  # 不使用最高难度模式
     
     env_cfg.depth.angle = [0, 1]
     env_cfg.noise.add_noise = True
