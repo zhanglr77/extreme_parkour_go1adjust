@@ -26,7 +26,7 @@ class Go1GapHighResCfg( LeggedRobotCfg ):
     """
     
     class env( LeggedRobotCfg.env ):
-        num_envs = 3072  # ⭐ 3072环境（平衡：3cm网格增加2.3×顶点，减少25%环境数）
+        num_envs = 6000  # ⭐ 3072环境（平衡：3cm网格增加2.3×顶点，减少25%环境数）
         
         # ⭐ 关键修改1：更新scandots点数
         n_scan = 391  # 23(x) × 17(y) = 391个高分辨率扫描点（原132点）
@@ -135,9 +135,9 @@ class Go1GapHighResCfg( LeggedRobotCfg ):
         #   2cm网格：120,000顶点（4.2×），~72h，过度精确 ❌
         # 
         # 结论：3cm网格是精度和速度的完美平衡点！
-        terrain_length = 15.0  # ⭐ 15m（平衡顶点数）
+        terrain_length = 8.0  # ⭐ 15m（平衡顶点数）
         terrain_width = 4.0    # 保持4m
-        horizontal_scale = 0.03  # ⭐ 3cm网格（最优选择）
+        horizontal_scale = 0.05  # ⭐ 3cm网格（最优选择）
         vertical_scale = 0.005   # 垂直分辨率保持
         border_size = 5
         
@@ -207,7 +207,7 @@ class Go1GapHighResCfg( LeggedRobotCfg ):
         use_camera = False  # 初始训练不使用相机
         camera_num_envs = 192
         camera_terrain_num_rows = 10
-        camera_terrain_num_cols = 20
+        camera_terrain_num_cols = 40
         
         # Go1相机参数
         position = [0.27, 0, 0.03]  # [x, y, z] 相对base_link
@@ -253,7 +253,7 @@ class Go1GapHighResCfgPPO( LeggedRobotCfgPPO ):
     class runner( LeggedRobotCfgPPO.runner ):
         run_name = 'go1_highres'
         experiment_name = 'go1_gap_highres'
-        max_iterations = 25000  # 高分辨率可能需要更多训练步数
+        max_iterations = 15000  # 高分辨率可能需要更多训练步数
         
         # 训练参数
         save_interval = 500  # 每500次迭代保存一次
