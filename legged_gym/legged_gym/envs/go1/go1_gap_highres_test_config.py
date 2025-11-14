@@ -29,16 +29,14 @@ class Go1GapHighResTestCfg(Go1GapHighResCfg):
     
     class env(Go1GapHighResCfg.env):
         # ⭐ 关键：极少的环境数（适合8GB显存）
-        num_envs = 4  # 从32降到16（更安全）
+        num_envs = 4  # 从32降到4（本地测试）
         
         # ⚠️ 保持与完整版完全相同的观测配置（从Go1GapHighResCfg继承）
         # 已自动继承：
-        # - n_scan = 391
-        # - n_proprio = 47
+        # - n_scan = 697 (41×17点，X轴密集，Y轴原始配置)
+        # - n_proprio = 53
         # - history_len = 50
-        # - n_priv = 18
-        # - n_priv_latent = 50
-        # - num_observations = 2856
+        # - num_observations = 3447
         
         # 不需要重新定义，直接继承完整配置的所有观测参数
     
@@ -60,6 +58,7 @@ class Go1GapHighResTestCfg(Go1GapHighResCfg):
         max_init_terrain_level = 2  # 从更简单的难度开始测试
         
         # 地形分布（保持一致，验证地形生成）
+        # 👇 已更新：50%固定5cm间隙 + 50%固定15cm间隙
         terrain_dict = {
             "smooth slope": 0.,
             "rough slope up": 0.0,
@@ -79,16 +78,24 @@ class Go1GapHighResTestCfg(Go1GapHighResCfg):
             "parkour_hurdle": 0.0,
             "parkour_flat": 0.0,
             "parkour_step": 0.0,
-            "parkour_gap": 0.33,
+            "parkour_gap": 0.0,
             "demo": 0.0,
-            "fixed_gap_5cm": 0.33,
-            "fixed_gap_15cm": 0.34,
+            "fixed_gap_5cm": 0.5,
+            "fixed_gap_15cm": 0.5,
         }
         terrain_proportions = list(terrain_dict.values())
         
         border_size = 5
         gap_size = [0.03, 0.18]
         height = [0.02, 0.06]
+    
+    class commands(Go1GapHighResCfg.commands):
+        # 👇 已更新：期望速度改为 [0.1, 0.3] m/s
+        class ranges:
+            lin_vel_x = [0.1, 0.3]    # 前进速度（已更新）
+            lin_vel_y = [-0.3, 0.3]   # 侧向速度
+            ang_vel_yaw = [-0.5, 0.5] # 转向速度
+            heading = [-3.14, 3.14]
     
     class depth(Go1GapHighResCfg.depth):
         """深度相机配置（测试时不使用）"""
@@ -153,13 +160,14 @@ if __name__ == "__main__":
     
     print("📊 环境配置：")
     print(f"  环境数: {cfg.env.num_envs} （vs 完整版3072）")
-    print(f"  Scandots: {cfg.env.n_scan}点 （与完整版一致）")
-    print(f"  观测维度: {cfg.env.num_observations} （与完整版一致）")
+    print(f"  Scandots: {cfg.env.n_scan}点 (41×17，X轴密集) （与完整版一致）")
+    print(f"  观测维度: {cfg.env.num_observations} 维 （与完整版一致）")
     print()
     
     print("🗺️ 地形配置：")
     print(f"  地形尺寸: {cfg.terrain.terrain_length}m × {cfg.terrain.terrain_width}m （测试版缩小）")
     print(f"  网格分辨率: {cfg.terrain.horizontal_scale}m ({cfg.terrain.horizontal_scale*100:.0f}cm) ⭐ 与完整版一致")
+    print(f"  地形分布: 固定5cm间隙 50% + 固定15cm间隙 50% （已更新）")
     vertices = (cfg.terrain.terrain_length / cfg.terrain.horizontal_scale) * \
                (cfg.terrain.terrain_width / cfg.terrain.horizontal_scale)
     print(f"  地形顶点: {int(vertices):,}")
@@ -178,6 +186,7 @@ if __name__ == "__main__":
     print()
     
     print("⚡ 训练配置：")
+    print(f"  期望速度范围: {cfg.env.commands.ranges.lin_vel_x} m/s （已更新）")
     print(f"  最大迭代: {cfg_ppo.runner.max_iterations} （测试用，实际需25000+）")
     print(f"  每环境步数: {cfg_ppo.runner.num_steps_per_env}")
     print(f"  日志间隔: {cfg_ppo.runner.log_interval}")
