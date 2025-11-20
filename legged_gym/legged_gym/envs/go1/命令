@@ -109,3 +109,14 @@ python legged_gym/scripts/train.py \
     --exptid=go1_highres_697_teacher \
     --headless \
     --num_envs=3072
+
+    python legged_gym/scripts/train.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_student_vision_391_local \
+    --resumeid=go1_highres_6000envs \
+    --checkpoint=7500 \
+    --use_camera \
+    --delay \
+    --headless \
+    --num_envs=32  #
