@@ -80,6 +80,7 @@ class PPO:
                  device='cpu',
                  dagger_update_freq=20,
                  priv_reg_coef_schedual = [0, 0, 0],
+                 fixed_action_std=False,  # ⭐ 新增：是否固定 action std
                  **kwargs
                  ):
 
@@ -94,7 +95,15 @@ class PPO:
         self.actor_critic = actor_critic
         self.actor_critic.to(self.device)
         self.storage = None # initialized later
-        self.optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
+        
+        # ⭐ 如果需要固定 action std，则从优化器参数中排除它
+        if fixed_action_std:
+            print("⭐ Fixed action std enabled - std parameter will not be updated by optimizer")
+            actor_critic_params = [p for name, p in self.actor_critic.named_parameters() if 'std' not in name]
+        else:
+            actor_critic_params = self.actor_critic.parameters()
+        
+        self.optimizer = optim.Adam(actor_critic_params, lr=learning_rate)
         self.transition = RolloutStorage.Transition()
 
         # PPO parameters

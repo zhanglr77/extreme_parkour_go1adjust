@@ -514,7 +514,16 @@ class OnPolicyRunner:
                 print("No saved depth actor, Copying actor critic actor to depth actor...")
                 self.alg.depth_actor.load_state_dict(self.alg.actor_critic.actor.state_dict())
         if load_optimizer:
-            self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
+            try:
+                self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
+                print("Optimizer state loaded successfully.")
+            except (ValueError, RuntimeError) as e:
+                print(f"⚠️  Warning: Could not load optimizer state: {e}")
+                print("⚠️  This is expected when:")
+                print("    - Model architecture changed (e.g., different n_scan)")
+                print("    - Starting a new training task from a checkpoint")
+                print("    - Running inference/play mode")
+                print("    Optimizer will be initialized with default state.")
         # self.current_learning_iteration = loaded_dict['iter']
         print("*" * 80)
         return loaded_dict['infos']

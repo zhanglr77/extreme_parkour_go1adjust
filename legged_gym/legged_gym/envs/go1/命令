@@ -62,9 +62,50 @@ highres任务
        ~75.0GB
 
 export LD_LIBRARY_PATH=/home/zhanglr/anaconda3/envs/parkour/lib:$LD_LIBRARY_PATH
-cd /path/to/legged_gym
+
+# ========== 本地测试命令 ==========
+# 使用 391 配置测试已训练模型
+python legged_gym/scripts/play2.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_6000envs \
+    --checkpoint=7500 \
+    --headless
+
+# 使用 697 配置（新配置，需要重新训练）
+python legged_gym/scripts/play2.py \
+    --task=go1_highres \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_6000envs \
+    --headless
+
+# ========== 云服务器命令 ==========
+# 注意：服务器上也需要 go1_highres_391_config.py 文件和更新的 on_policy_runner.py
+
+# 使用 391 配置测试（匹配已有模型）
+python legged_gym/scripts/play3.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_6000envs \
+    --checkpoint=7500 \
+    --headless
+
+# 391 配置视觉蒸馏训练
+python legged_gym/scripts/train.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_student_vision_391 \
+    --resumeid=go1_highres_6000envs \
+    --checkpoint=7500 \
+    --use_camera \
+    --delay \
+    --headless \
+    --num_envs=512
+
+# 697 配置从头训练新模型（推荐，更高精度）
 python legged_gym/scripts/train.py \
     --task=go1_highres \
     --proj_name=parkour_new \
-    --exptid=go1_highres_3cm_391scan \
-    --headless
+    --exptid=go1_highres_697_teacher \
+    --headless \
+    --num_envs=3072

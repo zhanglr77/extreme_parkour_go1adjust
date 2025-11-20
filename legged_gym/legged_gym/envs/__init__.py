@@ -42,6 +42,7 @@ from .a1.a1_parkour_config import A1ParkourCfg, A1ParkourCfgPPO
 from .go1.go1_config import Go1RoughCfg, Go1RoughCfgPPO
 from .go1.go1_gap_config import Go1GapCfg, Go1GapCfgPPO
 from .go1.go1_gap_highres_config import Go1GapHighResCfg, Go1GapHighResCfgPPO
+from .go1.go1_gap_highres_391_config import Go1GapHighRes391Cfg, Go1GapHighRes391CfgPPO  # 391点配置（兼容旧模型）
 from .go1.go1_gap_highres_test_config import Go1GapHighResTestCfg, Go1GapHighResTestCfgPPO  # 测试配置
 
 import os
@@ -55,5 +56,6 @@ from legged_gym.utils.task_registry import task_registry
 task_registry.register( "a1", LeggedRobot, A1ParkourCfg(), A1ParkourCfgPPO() )
 task_registry.register( "go1", LeggedRobot, Go1RoughCfg(), Go1RoughCfgPPO() )
 task_registry.register( "go1_gap", LeggedRobot, Go1GapCfg(), Go1GapCfgPPO() )
-task_registry.register( "go1_highres", LeggedRobot, Go1GapHighResCfg(), Go1GapHighResCfgPPO() )  # ⭐ 高分辨率配置
+task_registry.register( "go1_highres", LeggedRobot, Go1GapHighResCfg(), Go1GapHighResCfgPPO() )  # ⭐ 高分辨率配置 (697点)
+task_registry.register( "go1_highres_391", LeggedRobot, Go1GapHighRes391Cfg(), Go1GapHighRes391CfgPPO() )  # 🔄 391点配置（兼容旧模型）
 task_registry.register( "go1_highres_test", LeggedRobot, Go1GapHighResTestCfg(), Go1GapHighResTestCfgPPO() )  # 🧪 本地测试配置

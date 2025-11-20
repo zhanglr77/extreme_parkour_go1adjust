@@ -786,14 +786,20 @@ def demo_terrain(terrain):
     
     platform_height = slope_height + np.random.randint(0, 0.2 / terrain.vertical_scale)
 
-    goals[5] = [platform_length+slope_depth/2, left_y]
-    heights = np.tile(np.linspace(-slope_height, slope_height, slope_width), (slope_depth, 1)) * 1
-    terrain.height_field_raw[platform_length:platform_length+slope_depth, left_y-slope_width//2: left_y+slope_width//2] = heights.astype(int) + platform_height
+    # 确保不超出地形边界
+    max_length = terrain.height_field_raw.shape[0]
+    actual_slope_depth_1 = min(slope_depth, max_length - platform_length)
+    if actual_slope_depth_1 > 0:
+        goals[5] = [platform_length+actual_slope_depth_1/2, left_y]
+        heights = np.tile(np.linspace(-slope_height, slope_height, slope_width), (actual_slope_depth_1, 1)) * 1
+        terrain.height_field_raw[platform_length:platform_length+actual_slope_depth_1, left_y-slope_width//2: left_y+slope_width//2] = heights.astype(int) + platform_height
     
     platform_length += slope_depth + gap_size
-    goals[6] = [platform_length+slope_depth/2, right_y]
-    heights = np.tile(np.linspace(-slope_height, slope_height, slope_width), (slope_depth, 1)) * -1
-    terrain.height_field_raw[platform_length:platform_length+slope_depth, right_y-slope_width//2: right_y+slope_width//2] = heights.astype(int) + platform_height
+    actual_slope_depth_2 = min(slope_depth, max_length - platform_length)
+    if actual_slope_depth_2 > 0:
+        goals[6] = [platform_length+actual_slope_depth_2/2, right_y]
+        heights = np.tile(np.linspace(-slope_height, slope_height, slope_width), (actual_slope_depth_2, 1)) * -1
+        terrain.height_field_raw[platform_length:platform_length+actual_slope_depth_2, right_y-slope_width//2: right_y+slope_width//2] = heights.astype(int) + platform_height
     
     platform_length += slope_depth + gap_size + round(0.4 / terrain.horizontal_scale)
     goals[-1] = [platform_length, left_y]

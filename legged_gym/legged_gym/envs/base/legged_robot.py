@@ -871,7 +871,10 @@ class LeggedRobot(BaseTask):
             camera_props.width = self.cfg.depth.original[0]
             camera_props.height = self.cfg.depth.original[1]
             camera_props.enable_tensors = True
-            camera_horizontal_fov = self.cfg.depth.horizontal_fov 
+            # 处理 horizontal_fov 可能是列表或单个值的情况
+            camera_horizontal_fov = self.cfg.depth.horizontal_fov
+            if isinstance(camera_horizontal_fov, (list, tuple)):
+                camera_horizontal_fov = np.random.uniform(camera_horizontal_fov[0], camera_horizontal_fov[1])
             camera_props.horizontal_fov = camera_horizontal_fov
 
             camera_handle = self.gym.create_camera_sensor(env_handle, camera_props)
@@ -1129,13 +1132,15 @@ class LeggedRobot(BaseTask):
             non_edge_geom = gymutil.WireframeSphereGeometry(0.02, 16, 16, None, color=(0, 1, 0))
             edge_geom = gymutil.WireframeSphereGeometry(0.02, 16, 16, None, color=(1, 0, 0))
 
-            feet_pos = self.rigid_body_states[:, self.feet_indices, :3]
-            for i in range(4):
-                pose = gymapi.Transform(gymapi.Vec3(feet_pos[self.lookat_id, i, 0], feet_pos[self.lookat_id, i, 1], feet_pos[self.lookat_id, i, 2]), r=None)
-                if self.feet_at_edge[self.lookat_id, i]:
-                    gymutil.draw_lines(edge_geom, self.gym, self.viewer, self.envs[i], pose)
-                else:
-                    gymutil.draw_lines(non_edge_geom, self.gym, self.viewer, self.envs[i], pose)
+            # 只在有 viewer 时绘制（非无头模式）
+            if self.viewer is not None:
+                feet_pos = self.rigid_body_states[:, self.feet_indices, :3]
+                for i in range(4):
+                    pose = gymapi.Transform(gymapi.Vec3(feet_pos[self.lookat_id, i, 0], feet_pos[self.lookat_id, i, 1], feet_pos[self.lookat_id, i, 2]), r=None)
+                    if self.feet_at_edge[self.lookat_id, i]:
+                        gymutil.draw_lines(edge_geom, self.gym, self.viewer, self.envs[self.lookat_id], pose)
+                    else:
+                        gymutil.draw_lines(non_edge_geom, self.gym, self.viewer, self.envs[self.lookat_id], pose)
     
     def _init_height_points(self):
         """ Returns points at which the height measurments are sampled (in base frame)
