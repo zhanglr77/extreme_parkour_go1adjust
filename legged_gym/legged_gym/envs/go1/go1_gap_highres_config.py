@@ -210,10 +210,12 @@ class Go1GapHighResCfg( LeggedRobotCfg ):
         push_interval_s = 8
 
     class depth( LeggedRobotCfg.depth ):
-        position = [0.355, 0, 0.065]
-        angle = [25, 25]  # 固定25度向下倾斜角度
+        # ⭐ Intel RealSense D435i 真实相机参数
+        position = [0.272, 0.0075, 0.092]  # [x, y, z] 相对base frame (单位:米)
+        angle = [0, 29.8]  # [roll, pitch] pitch=0.52弧度≈29.8度
         
-        horizontal_fov = [86, 90]
+        horizontal_fov = 70.21  # ⭐ D435i 水平视场角
+        vertical_fov = 59.18    # ⭐ D435i 垂直视场角
         dis_noise = 0.0
 
         gaussian_noise_std = 0.

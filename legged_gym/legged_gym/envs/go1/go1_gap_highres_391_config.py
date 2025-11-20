@@ -207,18 +207,19 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
     class depth( LeggedRobotCfg.depth ):
         """深度相机配置（用于后续视觉蒸馏）"""
         use_camera = False  # 初始训练不使用相机
-        camera_num_envs = 192
+        camera_num_envs = 512  # ⭐ 增加到512以支持更多相机环境
         camera_terrain_num_rows = 10
         camera_terrain_num_cols = 20
         
-        # Go1相机参数
-        position = [0.27, 0, 0.03]  # [x, y, z] 相对base_link
-        angle = [0, -10]  # [roll, pitch] 俯仰角-10度
+        # ⭐ Intel RealSense D435i 真实相机参数
+        position = [0.272, 0.0075, 0.092]  # [x, y, z] 相对base frame (单位:米)
+        angle = [0, 29.8]  # [roll, pitch] pitch=0.52弧度≈29.8度
         
         # 分辨率
         original = (106, 60)
         resized = (87, 58)
-        horizontal_fov = 87
+        horizontal_fov = 70.21  # ⭐ D435i 水平视场角
+        vertical_fov = 59.18    # ⭐ D435i 垂直视场角
         
         # 深度范围
         near_clip = 0.01

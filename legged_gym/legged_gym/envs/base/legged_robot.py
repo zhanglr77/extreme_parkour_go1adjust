@@ -150,7 +150,18 @@ class LeggedRobot(BaseTask):
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
         self.extras["delta_yaw_ok"] = self.delta_yaw < 0.6
         if self.cfg.depth.use_camera and self.global_counter % self.cfg.depth.update_interval == 0:
-            self.extras["depth"] = self.depth_buffer[:, -2]  # have already selected last one
+            # ⭐ 只返回前camera_num_envs个环境的深度图
+            num_camera_envs = self.depth_buffer.shape[0]
+            if num_camera_envs < self.num_envs:
+                # 为没有相机的环境填充零
+                full_depth = torch.zeros(self.num_envs, 
+                                         self.depth_buffer.shape[2], 
+                                         self.depth_buffer.shape[3],
+                                         device=self.device)
+                full_depth[:num_camera_envs] = self.depth_buffer[:, -1]  # 使用最新一帧
+                self.extras["depth"] = full_depth
+            else:
+                self.extras["depth"] = self.depth_buffer[:, -1]
         else:
             self.extras["depth"] = None
         return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras
@@ -186,7 +197,9 @@ class LeggedRobot(BaseTask):
         self.gym.render_all_camera_sensors(self.sim)
         self.gym.start_access_image_tensors(self.sim)
 
-        for i in range(self.num_envs):
+        # ⭐ 只处理有相机的环境
+        num_camera_envs = len(self.cam_handles)
+        for i in range(num_camera_envs):
             depth_image_ = self.gym.get_camera_image_gpu_tensor(self.sim, 
                                                                 self.envs[i], 
                                                                 self.cam_handles[i],
@@ -784,7 +797,9 @@ class LeggedRobot(BaseTask):
             self.height_update_interval = int(self.cfg.env.height_update_dt / (self.cfg.sim.dt * self.cfg.control.decimation))
 
         if self.cfg.depth.use_camera:
-            self.depth_buffer = torch.zeros(self.num_envs,  
+            # ⭐ 只为有相机的环境分配depth_buffer
+            num_camera_envs = min(self.cfg.depth.camera_num_envs, self.num_envs)
+            self.depth_buffer = torch.zeros(num_camera_envs,  
                                             self.cfg.depth.buffer_len, 
                                             self.cfg.depth.resized[1], 
                                             self.cfg.depth.resized[0]).to(self.device)
@@ -865,7 +880,8 @@ class LeggedRobot(BaseTask):
 
 
     def attach_camera(self, i, env_handle, actor_handle):
-        if self.cfg.depth.use_camera:
+        # ⭐ 只为前 camera_num_envs 个环境创建相机
+        if self.cfg.depth.use_camera and i < self.cfg.depth.camera_num_envs:
             config = self.cfg.depth
             camera_props = gymapi.CameraProperties()
             camera_props.width = self.cfg.depth.original[0]
