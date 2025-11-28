@@ -120,7 +120,7 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
         # 地形网格配置
         mesh_type = 'trimesh'
         num_rows = 10  # 10个难度级别
-        num_cols = 40  # 40列地形类型
+        num_cols = 10  # 40列地形类型
         
         # ⚠️ 关键参数：基于课程起点的最优地形分辨率
         # 
@@ -137,13 +137,12 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
         #   2cm网格：120,000顶点（4.2×），~72h，过度精确 ❌
         # 
         # 结论：3cm网格是精度和速度的完美平衡点！
-        terrain_length = 15.0  # ⭐ 15m（平衡顶点数）
+        terrain_length = 8.0  # ⭐ 15m（平衡顶点数）
         terrain_width = 4.0    # 保持4m
-        horizontal_scale = 0.03  # ⭐ 3cm网格（最优选择）
+        horizontal_scale = 0.05  # ⭐ 3cm网格（最优选择）
         vertical_scale = 0.005   # 垂直分辨率保持
         border_size = 5
         
-        # 地形分布：3种小间隙地形
         terrain_dict = {
             "smooth slope": 0.,
             "rough slope up": 0.0,
@@ -163,10 +162,10 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
             "parkour_hurdle": 0.0,
             "parkour_flat": 0.0,
             "parkour_step": 0.0,
-            "parkour_gap": 0.33,          # 33% - 变化间隙 (10-45cm)
+            "parkour_gap": 0.,            # 0% - 变化间隙 (已移除)
             "demo": 0.0,
-            "fixed_gap_5cm": 0.33,        # 33% - 小间隙 (2-3.5cm，课程)
-            "fixed_gap_15cm": 0.34,       # 34% - 中等间隙 (5-10cm，课程)
+            "fixed_gap_5cm": 0.5,         # 50% - 小间隙 (2-3.5cm，课程)
+            "fixed_gap_15cm": 0.5,        # 50% - 中等间隙 (5-10cm，课程)
         }
         terrain_proportions = list(terrain_dict.values())
         
@@ -180,7 +179,7 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
         # 
         # 注意：3cm地形网格可以合理表示3.67cm的最小间隙
         
-        # 地形参数
+        # 地形参数 
         gap_size = [0.03, 0.18]  # 3-18cm范围
         height = [0.02, 0.06]
         
@@ -191,7 +190,7 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
         resampling_time = 7.
         
         class ranges:
-            lin_vel_x = [0.3, 1.2]    # 前进速度
+            lin_vel_x = [0.1, 0.3]    # 前进速度
             lin_vel_y = [-0.3, 0.3]   # 侧向速度
             ang_vel_yaw = [-0.5, 0.5] # 转向速度
             heading = [-3.14, 3.14]
@@ -213,7 +212,7 @@ class Go1GapHighRes391Cfg( LeggedRobotCfg ):
         
         # ⭐ Intel RealSense D435i 真实相机参数
         position = [0.272, 0.0075, 0.092]  # [x, y, z] 相对base frame (单位:米)
-        angle = [0, 29.8]  # [roll, pitch] pitch=0.52弧度≈29.8度
+        angle = [29.8, 29.8]  # [roll, pitch] pitch=0.52弧度≈29.8度
         
         # 分辨率
         original = (106, 60)
@@ -236,12 +235,16 @@ class Go1GapHighRes391CfgPPO( LeggedRobotCfgPPO ):
     
     class algorithm( LeggedRobotCfgPPO.algorithm ):
         entropy_coef = 0.01
-        
+        fixed_action_std = True  # ⭐ 固定 action std，不让优化器更新它
+
         # ⭐ 关键修改3：调整scan_encoder维度
         # 需要处理391维输入而不是132维
         # scan_encoder会自动根据 n_scan 调整第一层输入维度
     
     class policy( LeggedRobotCfgPPO.policy ):
+        # ⭐ 固定 action std（不衰减）
+        init_noise_std = 0.4  # 固定标准差为 0.5（推荐范围：0.3-0.7）
+        # 注意：fixed_action_std 配置在 algorithm 类中
         # Scan encoder配置（从 legged_robot_config 继承）
         # scan_encoder_dims = [128, 64, 32]
         # 第一层会自动适配：391 → 128 → 64 → 32

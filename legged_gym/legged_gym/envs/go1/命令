@@ -102,6 +102,17 @@ python legged_gym/scripts/train.py \
     --headless \
     --num_envs=512
 
+    python legged_gym/scripts/train.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_student_vision_391_1127GJ \
+    --resumeid=go1_highres_6000envs \
+    --checkpoint=7500 \
+    --use_camera \
+    --delay \
+    --headless \
+    --num_envs=512
+
 # 697 配置从头训练新模型（推荐，更高精度）
 python legged_gym/scripts/train.py \
     --task=go1_highres \
@@ -127,3 +138,35 @@ python legged_gym/scripts/train.py \
     --exptid=go1_highres_391_std_0.4 \
     --headless
     (这次训练实际上用的是697和0.5固定的std)
+
+python legged_gym/scripts/play2.py \
+    --task=go1_highres \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_391_std_0.4 \
+    --web
+    
+这次训练实际上用的是391和0.4固定的std
+python legged_gym/scripts/train.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_391_std_0.4 \
+
+
+
+         cd /home/ubuntu/extreme_parkour_go1adjust/legged_gym && CUDA_VISIBLE_DEVICES=0 python legged_gym/scripts/train.py --task=go1_highres_391 --proj_name=parkour_new --exptid=go1_student_vision_391_local --resumeid=go1_highres_6000envs --checkpoint=7500 --use_camera --delay --headless --num_envs=32
+cd /home/ubuntu/extreme_parkour_go1adjust/legged_gym && \
+python legged_gym/scripts/play3.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_student_vision_391_local \
+    --checkpoint=12500 \
+    --web
+
+    cd /home/ubuntu/extreme_parkour_go1adjust/legged_gym && python legged_gym/scripts/play3.py --task=go1_highres_391 --proj_name=parkour_new --exptid=go1_student_vision_391_local --checkpoint=12500 --use_camera --delay --web
+
+    python legged_gym/scripts/train.py \
+    --task=go1_highres_391 \
+    --proj_name=parkour_new \
+    --exptid=go1_highres_391_teststd \
+    --headless \
+    --num_envs=6000
