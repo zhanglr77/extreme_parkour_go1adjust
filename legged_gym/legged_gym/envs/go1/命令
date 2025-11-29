@@ -143,6 +143,7 @@ python legged_gym/scripts/play2.py \
     --task=go1_highres \
     --proj_name=parkour_new \
     --exptid=go1_highres_391_std_0.4 \
+    --checkpoint=5000
     --web
     
 这次训练实际上用的是391和0.4固定的std
@@ -170,3 +171,5 @@ python legged_gym/scripts/play3.py \
     --exptid=go1_highres_391_teststd \
     --headless \
     --num_envs=6000
+重新训练一个6000个环境std0.4的，391的教师策略（）看看这个的情况再说）
+    (parkour) root@development-2947-sufbdgca-b7bc87bf5-74f8p:~/data/extreme_parkour_go1adjust/legged_gym# python legged_gym/scripts/train.py     --task=go1_highres_391     --proj_name=parkour_new     --exptid=1128go1_highres_391_std_0.4 --num_envs=4096
